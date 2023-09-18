@@ -1,0 +1,63 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+
+# Function to download and store stock data
+def download_and_store_stock_data(stock_symbol):
+    try:
+        stock_data = yf.download(stock_symbol, start="2020-01-01", end="2023-01-01")
+        stock_data.to_csv(f"{stock_symbol}_data.csv")
+        print(f"Downloaded data for {stock_symbol} and stored it in {stock_symbol}_data.csv")
+    except Exception as e:
+        print(f"Error downloading data for {stock_symbol}: {e}")
+
+# Function to calculate VaR using Variance-Covariance approach
+def calculate_var_variance_covariance(stock_symbols, weights, confidence_level, time_horizon):
+    portfolio_data = pd.DataFrame()
+
+    for symbol, weight in zip(stock_symbols, weights):
+        data = pd.read_csv(f"{symbol}_data.csv", index_col='Date', parse_dates=True)
+        portfolio_data[symbol] = data['Adj Close'] * weight
+
+    portfolio_returns = portfolio_data.sum(axis=1).pct_change().dropna()
+    portfolio_stddev = portfolio_returns.std()
+    z_score = -1.645  # For a 95% confidence level (adjust as needed)
+    var = portfolio_data.iloc[-1].sum() * z_score * portfolio_stddev * np.sqrt(time_horizon)
+
+    return var
+
+# Function to calculate VaR using Monte Carlo Simulation approach (optional)
+def calculate_var_monte_carlo(stock_symbols, weights, confidence_level, time_horizon, num_simulations):
+    portfolio_data = pd.DataFrame()
+
+    for symbol, weight in zip(stock_symbols, weights):
+        data = pd.read_csv(f"{symbol}_data.csv", index_col='Date', parse_dates=True)
+        portfolio_data[symbol] = data['Adj Close'] * weight
+
+    portfolio_returns = portfolio_data.sum(axis=1).pct_change().dropna()
+    simulations = []
+
+    for _ in range(num_simulations):
+        simulated_returns = np.random.choice(portfolio_returns, time_horizon)
+        simulated_portfolio_value = (1 + simulated_returns).prod() * portfolio_data.iloc[-1].sum()
+        simulations.append(simulated_portfolio_value)
+
+    var = np.percentile(simulations, 100 * (1 - confidence_level))
+
+    return var
+
+# Input the number of stocks
+num_stocks = int(input("Enter the number of stocks: "))
+
+# Input the stock symbols and weights
+stock_symbols = []
+weights = []
+for i in range(num_stocks):
+    symbol = input(f"Enter the symbol of stock {i+1}: ").strip().upper()
+    weight = float(input(f"Enter the weight of stock {i+1} in the portfolio (as a decimal): "))
+    stock_symbols.append(symbol)
+    weights.append(weight)
+
+# Input VaR parameters
+confidence_level = float(input("Enter the confidence level (as a decimal, e.g., 0.95 for 95%): "))
+time_horizon = int
