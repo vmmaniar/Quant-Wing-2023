@@ -14,7 +14,4 @@ Maximum drawdown
 
 A2 is question 2 (Not solved till now )
 A3 is question 3 
-It includes calculating var using the following 3 methods
-variance-covariance approach
-Historical simulation approach
-Monte Carlo simulation approach (optional)
+It includes calculating var using monte carlo
